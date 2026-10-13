@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}CertiChain Nexus - Blockchain Certificate Verification{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="{{ url_for('verify.landing') }}" class="navbar-brand">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <path d="m9 12 2 2 4-4"/>
+      </svg>
+      <span>CertiChain <span class="gradient-text">Nexus</span></span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="{{ url_for('verify.landing') }}">Home</a></li>
+      <li><a href="{{ url_for('verify.search_page') }}">Verify ID</a></li>
+      <li><a href="{{ url_for('capsule.capsule_verify_page') }}">Proof Capsule</a></li>
+      <li><a href="{{ url_for('ledger.explorer') }}">Ledger Explorer</a></li>
+      <li><a href="{{ url_for('analytics.fraud_radar') }}">Fraud Radar</a></li>
+      
+      {% if session.get('user_id') %}
+        {% if session.get('user_role') == 'ADMIN' %}
+          <li><a href="{{ url_for('admin.dashboard') }}" class="btn-secondary">Admin Console</a></li>
+        {% elif session.get('user_role') == 'ISSUER' %}
+          <li><a href="{{ url_for('certificate.issuer_dashboard') }}" class="btn-secondary">Issuer Portal</a></li>
+        {% elif session.get('user_role') == 'STUDENT' %}
+          <li><a href="{{ url_for('certificate.student_portal') }}" class="btn-secondary">Student Vault</a></li>
+        {% endif %}
+        <li><a href="{{ url_for('auth.logout') }}" style="color: var(--danger);">Logout</a></li>
+      {% else %}
+        <li><a href="{{ url_for('auth.login') }}" class="btn-primary">Sign In</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+
+  <main style="max-width: 1200px; margin: 2rem auto; padding: 0 1rem; width: 100%;">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div style="margin-bottom: 1.5rem;">
+          {% for category, message in messages %}
+            <div class="glass-panel" style="padding: 1rem; border-left: 4px solid var(--{{ category if category != 'danger' else 'danger' }}); margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    <p>CertiChain Nexus &copy; 2026. Blockchain-Based Certificate Verification System with Explainable Trust & Fraud Detection.</p>
+    <p style="margin-top: 0.4rem; font-size: 0.75rem; color: var(--text-dim);">Cryptographic SHA-256 Ledger &bull; Ed25519 Digital Signatures &bull; Merkle Checkpoint Anchoring</p>
+  </footer>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

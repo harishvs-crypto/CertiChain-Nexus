@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Certificate Fraud Radar - CertiChain Nexus{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+  <div>
+    <h1>Certificate Fraud Radar</h1>
+    <p style="color: var(--text-muted);">Real-time, rule-based anomaly monitoring across authoritative verification audit logs.</p>
+  </div>
+  <a href="{{ url_for('analytics.audit_log') }}" class="btn-secondary">📜 Full Audit Logs</a>
+</div>
+
+<!-- Stats Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem;">
+  <div class="glass-panel" style="padding: 1.25rem;">
+    <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">TOTAL ATTEMPTS</div>
+    <div style="font-size: 2rem; font-weight: 800; color: var(--primary); margin: 0.2rem 0;">{{ summary.total_verifications }}</div>
+    <div style="font-size: 0.8rem; color: var(--text-muted);">Real-time logged requests</div>
+  </div>
+
+  <div class="glass-panel" style="padding: 1.25rem;">
+    <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">SUCCESSFUL</div>
+    <div style="font-size: 2rem; font-weight: 800; color: var(--success); margin: 0.2rem 0;">{{ summary.successful_verifications }}</div>
+    <div style="font-size: 0.8rem; color: var(--success);">Authentic credentials</div>
+  </div>
+
+  <div class="glass-panel" style="padding: 1.25rem;">
+    <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">FAILED / TAMPERED</div>
+    <div style="font-size: 2rem; font-weight: 800; color: var(--danger); margin: 0.2rem 0;">{{ summary.failed_verifications }}</div>
+    <div style="font-size: 0.8rem; color: var(--danger);">Rejected claims</div>
+  </div>
+
+  <div class="glass-panel" style="padding: 1.25rem;">
+    <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">RULE-TRIGGERED ALERTS</div>
+    <div style="font-size: 2rem; font-weight: 800; color: var(--warning); margin: 0.2rem 0;">{{ summary.alerts|length }}</div>
+    <div style="font-size: 0.8rem; color: var(--warning);">Active heuristic detections</div>
+  </div>
+</div>
+
+<!-- Active Alerts Panel -->
+<div class="glass-panel-glow" style="padding: 1.75rem; margin-bottom: 2rem; border-color: rgba(245, 158, 11, 0.4);">
+  <h3 style="color: var(--warning); display: flex; align-items: center; gap: 0.5rem;">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    Active Fraud Heuristics & Anomaly Flags
+  </h3>
+  <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem; margin-bottom: 1.25rem;">
+    Configurable detection windows evaluating client rate limits, repeated fingerprint mismatches, and probing against revoked or suspended records.
+  </p>
+
+  {% if summary.alerts %}
+    <div style="display: grid; gap: 0.75rem;">
+      {% for alert in summary.alerts %}
+      <div style="background: rgba(245, 158, 11, 0.1); border-left: 4px solid var(--warning); padding: 1rem; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <span class="status-chip {{ 'TAMPERED' if alert.severity == 'CRITICAL' else 'ISSUER_UNTRUSTED' }}">{{ alert.severity }}</span>
+          <strong style="margin-left: 0.5rem; font-size: 0.95rem;">{{ alert.rule_id }}</strong>
+          <div style="color: var(--text-main); font-size: 0.9rem; margin-top: 0.3rem;">{{ alert.reason }}</div>
+        </div>
+        <div class="mono" style="font-size: 0.75rem; color: var(--text-dim);">{{ alert.timestamp }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p style="color: var(--success); font-weight: 500;">✓ No active security alerts or abnormal patterns detected in current observation window.</p>
+  {% endif %}
+</div>
+
+<!-- User Suspicious Reports Table -->
+<div class="glass-panel" style="padding: 1.5rem; margin-bottom: 2rem;">
+  <h3>Verifier Suspicious Activity Submissions</h3>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Target Certificate</th>
+        <th>Reason / Details</th>
+        <th>Reporter Contact</th>
+        <th>Review Status</th>
+        <th>Timestamp</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in summary.user_reports %}
+      <tr>
+        <td class="mono">#{{ r.id }}</td>
+        <td class="mono" style="font-weight: 700;">{{ r.certificate_ref }}</td>
+        <td>{{ r.reason }}</td>
+        <td>{{ r.reporter_contact or 'Anonymous' }}</td>
+        <td><span class="status-chip {{ 'PENDING' if r.review_status == 'PENDING' else 'ACTIVE' }}">{{ r.review_status }}</span></td>
+        <td class="mono" style="font-size: 0.8rem;">{{ r.created_at }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

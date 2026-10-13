@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - CertiChain Nexus{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+  <div>
+    <h1>Super Admin Dashboard</h1>
+    <p style="color: var(--text-muted);">System statistics, institution approvals, and Merkle checkpoint management.</p>
+  </div>
+  <a href="{{ url_for('admin.checkpoints') }}" class="btn-primary">+ Manage Checkpoints</a>
+</div>
+
+<!-- Stats Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem;">
+  <div class="glass-panel" style="padding: 1.25rem;">
+    <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">INSTITUTIONS</div>
+    <div style="font-size: 2rem; font-weight: 800; color: var(--primary); margin: 0.2rem 0;">{{ stats.total_issuers }}</div>
+    <div style="font-size: 0.8rem; color: var(--success);">{{ stats.trusted_issuers }} Trusted &bull; {{ stats.pending_issuers }} Pending</div>
+  </div>
+
+  <div class="glass-panel" style="padding: 1.25rem;">
+    <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">TOTAL CERTIFICATES</div>
+    <div style="font-size: 2rem; font-weight: 800; color: var(--accent-cyan); margin: 0.2rem 0;">{{ stats.total_certificates }}</div>
+    <div style="font-size: 0.8rem; color: var(--text-muted);">{{ stats.active_certificates }} Active &bull; {{ stats.revoked_certificates }} Revoked</div>
+  </div>
+
+  <div class="glass-panel" style="padding: 1.25rem;">
+    <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">LEDGER BLOCKS</div>
+    <div style="font-size: 2rem; font-weight: 800; color: var(--accent-teal); margin: 0.2rem 0;">{{ stats.total_blocks }}</div>
+    <div style="font-size: 0.8rem; color: var(--text-muted);">Index 0 to #{{ stats.total_blocks - 1 if stats.total_blocks > 0 else 0 }}</div>
+  </div>
+
+  <div class="glass-panel" style="padding: 1.25rem;">
+    <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">MERKLE CHECKPOINTS</div>
+    <div style="font-size: 2rem; font-weight: 800; color: var(--warning); margin: 0.2rem 0;">{{ stats.total_checkpoints }}</div>
+    <div style="font-size: 0.8rem; color: var(--text-muted);">Platform Key Signed</div>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+  <!-- Institution Management Panel -->
+  <div class="glass-panel" style="padding: 1.5rem;">
+    <h3 style="margin-bottom: 1rem;">Register & Approve Institution</h3>
+    
+    <form action="{{ url_for('admin.register_issuer') }}" method="POST" style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem;">
+      <input type="text" name="name" class="form-control" placeholder="Institution Full Name (e.g. Stanford Tech)" required>
+      <input type="text" name="code" class="form-control" placeholder="Code (e.g. STU)" style="width: 150px;" required>
+      <button type="submit" class="btn-primary" style="white-space: nowrap;">Register</button>
+    </form>
+
+    <h4 style="margin-top: 1.5rem; margin-bottom: 0.75rem;">Registered Institutions</h4>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Institution Name</th>
+          <th>Status</th>
+          <th>Key ID</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for issuer in recent_issuers %}
+        <tr>
+          <td class="mono" style="font-weight: 700;">{{ issuer.code }}</td>
+          <td>{{ issuer.name }}</td>
+          <td><span class="status-chip {{ issuer.status }}">{{ issuer.status }}</span></td>
+          <td class="mono" style="font-size: 0.8rem;">{{ issuer.key_id or 'Unprovisioned' }}</td>
+          <td>
+            {% if issuer.status == 'PENDING' %}
+              <form action="{{ url_for('admin.approve_issuer', issuer_id=issuer.id) }}" method="POST" style="display:inline;">
+                <button type="submit" class="btn-primary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">Approve Keypair</button>
+              </form>
+            {% elif issuer.status == 'TRUSTED' %}
+              <form action="{{ url_for('admin.suspend_issuer', issuer_id=issuer.id) }}" method="POST" style="display:inline;">
+                <button type="submit" class="btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; color: var(--danger);">Suspend</button>
+              </form>
+            {% elif issuer.status == 'SUSPENDED' %}
+              <form action="{{ url_for('admin.reinstate_issuer', issuer_id=issuer.id) }}" method="POST" style="display:inline;">
+                <button type="submit" class="btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; color: var(--success);">Reinstate</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Analytics Chart Panel -->
+  <div class="glass-panel" style="padding: 1.5rem;">
+    <h3>Status Distribution</h3>
+    <div style="position: relative; height: 260px; margin-top: 1rem;">
+      <canvas id="statusChart"></canvas>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const ctx = document.getElementById('statusChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Active', 'Revoked', 'Superseded'],
+      datasets: [{
+        data: [{{ stats.active_certificates }}, {{ stats.revoked_certificates }}, {{ stats.superseded_certificates }}],
+        backgroundColor: ['#10B981', '#EF4444', '#F59E0B'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#94A3B8' } }
+      }
+    }
+  });
+</script>
+{% endblock %}

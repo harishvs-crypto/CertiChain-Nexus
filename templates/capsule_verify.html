@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Offline Proof Capsule Verifier - CertiChain Nexus{% endblock %}
+
+{% block content %}
+<div style="max-width: 750px; margin: 1rem auto;">
+  <div class="glass-panel-glow" style="padding: 2.5rem; text-align: center; margin-bottom: 2rem;">
+    <h2>Standalone Proof Capsule Verifier</h2>
+    <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.5rem;">
+      Upload a downloadable <code>proof_capsule_*.json</code> file to evaluate canonical hashes, Ed25519 signatures, and Merkle inclusion proofs.
+    </p>
+
+    <div style="margin-top: 2rem; padding: 2.5rem; border: 2px dashed var(--border-glow); border-radius: var(--radius-md); background: rgba(30, 41, 59, 0.4);" id="dropZone">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="margin-bottom: 1rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <p style="font-weight: 600; font-size: 1.1rem;">Select or Drag & Drop Proof Capsule JSON File</p>
+      <input type="file" id="capsuleFileInput" accept=".json" style="display: none;">
+      <button onclick="document.getElementById('capsuleFileInput').click()" class="btn-primary" style="margin-top: 1rem;">Choose File</button>
+    </div>
+  </div>
+
+  <!-- Client-Side Evaluation Result Card -->
+  <div id="resultPanel" class="glass-panel" style="display: none; padding: 2rem; margin-bottom: 2rem;">
+    <h3 id="resultStatus" style="margin-bottom: 1rem;">Verification Result</h3>
+    <p id="resultReason" style="color: var(--text-muted); font-size: 1rem; margin-bottom: 1.5rem;"></p>
+
+    <div id="capsuleDetails" style="font-size: 0.85rem; color: var(--text-muted);"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('capsuleFileInput').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file) processCapsuleFile(file);
+});
+
+async function processCapsuleFile(file) {
+  const formData = new FormData();
+  formData.append('capsule_file', file);
+  
+  const resultPanel = document.getElementById('resultPanel');
+  const resultStatus = document.getElementById('resultStatus');
+  const resultReason = document.getElementById('resultReason');
+  const capsuleDetails = document.getElementById('capsuleDetails');
+  
+  resultPanel.style.display = 'block';
+  resultStatus.innerText = 'Evaluating Proof Capsule...';
+  resultReason.innerText = 'Executing cryptographic hash verification and signature validation...';
+  
+  try {
+    const response = await fetch('/api/verify/capsule', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await response.json();
+    
+    if (data.valid) {
+      resultStatus.innerHTML = '<span class="status-chip VERIFIED">STATUS: VERIFIED</span> Proof Capsule Validated Successfully!';
+      resultStatus.style.color = 'var(--success)';
+    } else {
+      resultStatus.innerHTML = '<span class="status-chip INVALID_PROOF">STATUS: INVALID_PROOF</span> Proof Capsule Validation Failed!';
+      resultStatus.style.color = 'var(--danger)';
+    }
+    
+    resultReason.innerText = data.reason;
+    capsuleDetails.innerHTML = `<strong>Certificate Reference:</strong> ${data.certificate_id || 'N/A'}`;
+  } catch (err) {
+    resultStatus.innerText = 'Error Processing File';
+    resultReason.innerText = err.message;
+  }
+}
+</script>
+{% endblock %}

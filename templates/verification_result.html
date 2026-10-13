@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Verification Result - {{ cert_id }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 1rem auto;">
+  
+  <!-- Header Banner -->
+  <div class="glass-panel-glow" style="padding: 2.5rem; text-align: center; margin-bottom: 2rem; border-top: 6px solid var(--{{ 'success' if result.status == 'VERIFIED' else ('warning' if result.status in ['SUPERSEDED', 'ISSUER_UNTRUSTED'] else 'danger') }});">
+    <div style="margin-bottom: 1rem;">
+      <span class="status-chip {{ result.status }}" style="font-size: 1.1rem; padding: 0.5rem 1.25rem;">
+        STATUS: {{ result.status }}
+      </span>
+    </div>
+
+    <h2 style="font-size: 1.8rem; margin-bottom: 0.75rem;">{{ result.explanation }}</h2>
+    <p style="color: var(--text-muted); font-size: 0.85rem; font-family: var(--font-mono);">
+      Verification Ref: <strong>{{ result.verification_ref }}</strong> &bull; Evaluated: {{ result.timestamp }}
+    </p>
+
+    {% if result.superseded_by_id %}
+    <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(245, 158, 11, 0.15); border: 1px solid var(--warning); border-radius: var(--radius-sm);">
+      Replacement Credential Available: <a href="{{ url_for('verify.verify_certificate_page', certificate_id=result.superseded_by_id) }}" class="mono" style="color: var(--warning); font-weight: 700;">{{ result.superseded_by_id }}</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Detailed Check Matrix -->
+  <div class="glass-panel" style="padding: 1.75rem; margin-bottom: 2rem;">
+    <h3 style="margin-bottom: 1rem; color: var(--accent-cyan);">Cryptographic & Status Inspection Matrix</h3>
+    
+    <div style="display: grid; gap: 0.75rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; background: var(--bg-card-hover); border-radius: var(--radius-sm);">
+        <div>
+          <strong>1. Payload Content Fingerprint (SHA-256)</strong>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Canonical field commitment & salt matching</div>
+        </div>
+        <span class="status-chip {{ 'VERIFIED' if result.checks.fingerprint else 'TAMPERED' }}">{{ 'MATCH' if result.checks.fingerprint else 'MISMATCH' }}</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; background: var(--bg-card-hover); border-radius: var(--radius-sm);">
+        <div>
+          <strong>2. Blockchain Ledger Integrity</strong>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Sequential previous-hash linking & block hashes</div>
+        </div>
+        <span class="status-chip {{ 'VERIFIED' if result.checks.ledger else 'LEDGER_ERROR' }}">{{ 'VALID' if result.checks.ledger else 'CORRUPTED' }}</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; background: var(--bg-card-hover); border-radius: var(--radius-sm);">
+        <div>
+          <strong>3. Ed25519 Digital Signature</strong>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Issuer public key cryptographic verification</div>
+        </div>
+        <span class="status-chip {{ 'VERIFIED' if result.checks.signature else 'INVALID_PROOF' }}">{{ 'AUTHENTIC' if result.checks.signature else 'INVALID' }}</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; background: var(--bg-card-hover); border-radius: var(--radius-sm);">
+        <div>
+          <strong>4. Institution Trust Status</strong>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Approved & active accreditation state</div>
+        </div>
+        <span class="status-chip {{ 'VERIFIED' if result.checks.issuer else 'ISSUER_UNTRUSTED' }}">{{ 'TRUSTED' if result.checks.issuer else 'UNTRUSTED' }}</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; background: var(--bg-card-hover); border-radius: var(--radius-sm);">
+        <div>
+          <strong>5. Credential Lifecycle Status</strong>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Active vs Revoked / Superseded checks</div>
+        </div>
+        <span class="status-chip {{ 'VERIFIED' if result.checks.credential_status else result.status }}">{{ 'ACTIVE' if result.checks.credential_status else result.status }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Certificate Details (where permitted) -->
+  {% if result.certificate %}
+  <div class="glass-panel" style="padding: 1.75rem; margin-bottom: 2rem;">
+    <h3 style="margin-bottom: 1rem; color: var(--primary);">Credential Metadata</h3>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.9rem;">
+      <div>Certificate ID: <strong class="mono">{{ result.certificate.id }}</strong></div>
+      <div>Issuing Institution: <strong>{{ result.issuer.name if result.issuer else 'Unknown' }}</strong></div>
+      <div>Course / Program: <strong>{{ result.certificate.course_name }}</strong></div>
+      <div>Award Type: <strong>{{ result.certificate.certificate_type }}</strong></div>
+      <div>Student Reference: <strong>{{ result.certificate.student_ref }}</strong></div>
+      <div>Grade: <strong style="color: var(--success);">{{ result.certificate.grade or 'N/A' }}</strong></div>
+      <div>Issue Date: <strong>{{ result.certificate.issue_date }}</strong></div>
+      <div>Version Number: <strong>v{{ result.certificate.version }}</strong></div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Trust Timeline UI -->
+  <div class="glass-panel" style="padding: 1.75rem; margin-bottom: 2rem;">
+    <h3 style="margin-bottom: 1rem; color: var(--accent-teal);">Trust Timeline Audit History</h3>
+    
+    <div class="timeline">
+      {% for event in timeline %}
+      <div class="timeline-item">
+        <div class="timeline-marker"></div>
+        <div style="font-weight: 600; font-size: 0.95rem;">{{ event.title }}</div>
+        <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.2rem;">{{ event.detail }}</div>
+        <div style="color: var(--text-dim); font-size: 0.75rem; margin-top: 0.2rem;" class="mono">{{ event.timestamp }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Report Suspicious Form -->
+  <div class="glass-panel" style="padding: 1.5rem;">
+    <h4 style="color: var(--warning);">Report Suspicious Activity</h4>
+    <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+      If you suspect this certificate or verification result is fraudulent, submit a security report.
+    </p>
+
+    <form action="{{ url_for('analytics.report_suspicious') }}" method="POST" style="display: flex; gap: 0.75rem;">
+      <input type="hidden" name="certificate_ref" value="{{ cert_id }}">
+      <input type="text" name="reporter_contact" class="form-control" placeholder="Your Contact Email (Optional)" style="width: 250px;">
+      <input type="text" name="reason" class="form-control" placeholder="Describe suspicious details..." required style="flex: 1;">
+      <button type="submit" class="btn-secondary" style="border-color: var(--warning); color: var(--warning);">Submit Security Flag</button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

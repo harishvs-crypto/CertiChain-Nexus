@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Merkle Checkpoints - CertiChain Nexus{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+  <div>
+    <h1>Merkle Checkpoints</h1>
+    <p style="color: var(--text-muted);">Periodic cryptographic anchors signed by the platform master key.</p>
+  </div>
+  {% if session.get('user_role') == 'ADMIN' %}
+  <form action="{{ url_for('admin.checkpoints') }}" method="POST">
+    <button type="submit" class="btn-primary">+ Create New Checkpoint</button>
+  </form>
+  {% endif %}
+</div>
+
+<div class="glass-panel" style="padding: 1.5rem; margin-bottom: 2rem;">
+  <h3>Created Checkpoints</h3>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Merkle Root</th>
+        <th>Block Range</th>
+        <th>Blocks Count</th>
+        <th>Platform Signature</th>
+        <th>Created At</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cp in checkpoints %}
+      <tr>
+        <td class="mono">#{{ cp.id }}</td>
+        <td class="mono" style="color: var(--primary);">{{ cp.merkle_root[:24] }}...</td>
+        <td class="mono">Block #{{ cp.from_block }} to #{{ cp.to_block }}</td>
+        <td>{{ cp.block_count }} blocks</td>
+        <td class="mono" style="font-size: 0.75rem;">{{ cp.signature[:20] }}...</td>
+        <td class="mono" style="font-size: 0.8rem;">{{ cp.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

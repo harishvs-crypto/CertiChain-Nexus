@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Verify Certificate - CertiChain Nexus{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 3rem auto;">
+  <div class="glass-panel" style="padding: 2.5rem; text-align: center;">
+    <h2>Credential Verification Search</h2>
+    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">
+      Authenticate any digital certificate by entering its Certificate ID or scanning its QR code.
+    </p>
+
+    <form action="{{ url_for('verify.search_page') }}" method="GET">
+      <div class="form-group" style="text-align: left;">
+        <label class="form-label">Certificate ID</label>
+        <input type="text" name="id" class="form-control mono" placeholder="e.g. CERT-2026-A1B2C3D4" required style="font-size: 1.1rem; padding: 0.85rem;">
+      </div>
+
+      <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; font-size: 1rem; padding: 0.85rem; margin-top: 1rem;">
+        🔍 Evaluate Credential
+      </button>
+    </form>
+
+    <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); font-size: 0.85rem; color: var(--text-dim);">
+      Need client-side verification? <a href="{{ url_for('capsule.capsule_verify_page') }}" style="color: var(--primary);">Upload Proof Capsule JSON</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Shared Credential View - CertiChain Nexus{% endblock %}
+
+{% block content %}
+<div style="max-width: 650px; margin: 2rem auto;">
+  {% if result.valid %}
+  <div class="glass-panel-glow" style="padding: 2.5rem;">
+    <div style="text-align: center; border-bottom: 1px solid var(--border-color); padding-bottom: 1.5rem; margin-bottom: 1.5rem;">
+      <span class="status-chip ACTIVE">REVEALED VIA RESTRICTED SHARE LINK</span>
+      <h2 style="margin-top: 0.75rem; color: var(--primary);">{{ result.shared_fields.course_name or 'Certified Program' }}</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Issued by <strong>{{ result.shared_fields.issuer_name }}</strong></p>
+    </div>
+
+    <div style="margin-bottom: 1.5rem;">
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+        The student has granted selective disclosure of the following attributes:
+      </p>
+
+      <div style="display: grid; gap: 0.75rem; background: var(--bg-card-hover); padding: 1.25rem; border-radius: var(--radius-sm);">
+        <div>Certificate ID: <strong class="mono">{{ result.shared_fields.certificate_id }}</strong></div>
+        {% if 'student_ref' in result.shared_fields %}
+          <div>Student Reference: <strong>{{ result.shared_fields.student_ref }}</strong></div>
+        {% endif %}
+        {% if 'course_name' in result.shared_fields %}
+          <div>Course / Curriculum: <strong>{{ result.shared_fields.course_name }}</strong></div>
+        {% endif %}
+        {% if 'issue_date' in result.shared_fields %}
+          <div>Issue Date: <strong>{{ result.shared_fields.issue_date }}</strong></div>
+        {% endif %}
+        {% if 'grade' in result.shared_fields %}
+          <div>Grade: <strong style="color: var(--success);">{{ result.shared_fields.grade }}</strong></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div style="border-top: 1px solid var(--border-color); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-dim);">
+      <span>Link Expiration: <span class="mono">{{ result.expires_at }}</span></span>
+      <a href="{{ url_for('verify.verify_certificate_page', certificate_id=result.shared_fields.certificate_id) }}" class="btn-secondary" style="padding: 0.3rem 0.7rem; font-size: 0.75rem;">Full Authoritative Check</a>
+    </div>
+  </div>
+  {% else %}
+  <div class="glass-panel" style="padding: 3rem; text-align: center; border-left: 4px solid var(--danger);">
+    <h2 style="color: var(--danger);">Access Denied</h2>
+    <p style="color: var(--text-muted); margin-top: 0.5rem; font-size: 1.1rem;">{{ result.error }}</p>
+    <a href="{{ url_for('verify.landing') }}" class="btn-primary" style="margin-top: 1.5rem;">Return to Homepage</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

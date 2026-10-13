@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Security Audit Log - CertiChain Nexus{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+  <div>
+    <h1>Security Audit Trail</h1>
+    <p style="color: var(--text-muted);">Privacy-conscious, append-only verification and access audit log.</p>
+  </div>
+</div>
+
+<div class="glass-panel" style="padding: 1.5rem;">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Event Type</th>
+        <th>Certificate Ref</th>
+        <th>Outcome</th>
+        <th>Privacy Client Identity Hash</th>
+        <th>Risk Flag</th>
+        <th>Timestamp</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for log in logs %}
+      <tr>
+        <td class="mono">#{{ log.id }}</td>
+        <td><strong>{{ log.event_type }}</strong></td>
+        <td class="mono" style="font-weight: 700;">{{ log.certificate_ref or 'SYSTEM' }}</td>
+        <td><span class="status-chip {{ log.outcome }}">{{ log.outcome }}</span></td>
+        <td class="mono" style="font-size: 0.75rem;">{{ log.identity_hash or 'N/A' }}</td>
+        <td>{% if log.risk_flag %}<span class="status-chip TAMPERED">RISK FLAG</span>{% else %}<span style="color: var(--text-dim);">Normal</span>{% endif %}</td>
+        <td class="mono" style="font-size: 0.8rem;">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

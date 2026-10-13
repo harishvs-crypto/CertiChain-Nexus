@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Issuer Dashboard - {{ issuer.name }}{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+  <div>
+    <h1>{{ issuer.name }}</h1>
+    <p style="color: var(--text-muted);">
+      Institution Code: <strong class="mono">{{ issuer.code }}</strong> &bull; 
+      Key ID: <span class="mono">{{ issuer.key_id or 'N/A' }}</span> &bull; 
+      Status: <span class="status-chip {{ issuer.status }}">{{ issuer.status }}</span>
+    </p>
+  </div>
+  {% if issuer.status == 'TRUSTED' %}
+    <a href="{{ url_for('certificate.issue') }}" class="btn-primary">+ Issue New Certificate</a>
+  {% else %}
+    <span class="status-chip SUSPENDED">Issuance Disabled</span>
+  {% endif %}
+</div>
+
+<!-- Stats Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem;">
+  <div class="glass-panel" style="padding: 1.25rem;">
+    <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">TOTAL ISSUED</div>
+    <div style="font-size: 2rem; font-weight: 800; color: var(--primary); margin: 0.2rem 0;">{{ stats.total }}</div>
+  </div>
+  <div class="glass-panel" style="padding: 1.25rem;">
+    <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">ACTIVE CREDENTIALS</div>
+    <div style="font-size: 2rem; font-weight: 800; color: var(--success); margin: 0.2rem 0;">{{ stats.active }}</div>
+  </div>
+  <div class="glass-panel" style="padding: 1.25rem;">
+    <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">REVOKED</div>
+    <div style="font-size: 2rem; font-weight: 800; color: var(--danger); margin: 0.2rem 0;">{{ stats.revoked }}</div>
+  </div>
+  <div class="glass-panel" style="padding: 1.25rem;">
+    <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">SUPERSEDED</div>
+    <div style="font-size: 2rem; font-weight: 800; color: var(--warning); margin: 0.2rem 0;">{{ stats.superseded }}</div>
+  </div>
+</div>
+
+<!-- Issued Certificates Table -->
+<div class="glass-panel" style="padding: 1.5rem;">
+  <h3>Issued Certificates History</h3>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Certificate ID</th>
+        <th>Student Ref</th>
+        <th>Course / Degree</th>
+        <th>Issue Date</th>
+        <th>Status</th>
+        <th>Ver.</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cert in certificates %}
+      <tr>
+        <td class="mono" style="font-weight: 700;">
+          <a href="{{ url_for('certificate.preview', cert_id=cert.id) }}" style="color: var(--primary); text-decoration: none;">{{ cert.id }}</a>
+        </td>
+        <td>{{ cert.student_ref }}</td>
+        <td>{{ cert.course_name }} ({{ cert.certificate_type }})</td>
+        <td>{{ cert.issue_date }}</td>
+        <td><span class="status-chip {{ cert.status }}">{{ cert.status }}</span></td>
+        <td class="mono">v{{ cert.version }}</td>
+        <td>
+          <a href="{{ url_for('certificate.preview', cert_id=cert.id) }}" class="btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">View</a>
+          <a href="{{ url_for('verify.verify_certificate_page', certificate_id=cert.id) }}" class="btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">Verify</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
